@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 if __name__ == '__main__':
     random_state = 7
     rate = 0.8
-    x, y = make_classification(n_samples=190000, n_features=64, n_informative=16, n_redundant=4, random_state=random_state, flip_y=0.1)
+    x, y = make_classification(n_samples=10000, n_features=64, n_informative=16, n_redundant=4, random_state=random_state, flip_y=0.1)
 
     features = [f'feature_{i}' for i in range(x.shape[1])]
     train_length = int(x.shape[0] * rate)
