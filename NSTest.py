@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 if __name__ == '__main__':
     random_state = 7
     rate = 0.8
-    x, y = make_classification(n_samples=10000, n_features=64, n_informative=16, n_redundant=4, random_state=random_state, flip_y=0.1)
+    x, y = make_classification(n_samples=200000, n_features=64, n_informative=16, n_redundant=4, random_state=random_state, flip_y=0.1)
 
     features = [f'feature_{i}' for i in range(x.shape[1])]
     train_length = int(x.shape[0] * rate)
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     print('LGB model', train_score, valid_score)
 
     clf = lgb.LGBMClassifier()
-    selector = NullSeletor(rf)
+    selector = NullSeletor(clf)
     selector.fit(train_x, train_y, features)
     train_x = selector.transform(train_x)
     valid_x = selector.transform(valid_x)
