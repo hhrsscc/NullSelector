@@ -1,14 +1,15 @@
 """ Null Seletor """
+from warnings import warn
 from collections import defaultdict
 
 import numpy as np
 from sklearn.base import BaseEstimator
-from sklearn.feature_selection.base import SelectorMixin
-from sklearn.utils import check_X_y, shuffle
+from sklearn.utils import check_array, check_X_y
+from sklearn.utils import shuffle, safe_mask
 from sklearn.utils.validation import check_is_fitted
 
 
-class NullSeletor(BaseEstimator, SelectorMixin):
+class NullSeletor(BaseEstimator):
     """ Feature selector use null importance """
     def __init__(self, model, choose_func=None, threshold=50, random_state=7):
         self.model = model
@@ -32,6 +33,7 @@ class NullSeletor(BaseEstimator, SelectorMixin):
 
         return info_dict
 
+
     def fit(self, dataset, target, features, *model_args, n_iter=10, **model_kwargs):
         """ Learn Null Importance """
 
@@ -51,6 +53,7 @@ class NullSeletor(BaseEstimator, SelectorMixin):
         for key, value in self.null_dict.items():
             self.null_dict[key] = sorted(value)
 
+
     def _get_support_features(self, actual_importance, null_importances):
         return actual_importance > np.percentile(null_importances, self.threshold)
 
@@ -60,3 +63,61 @@ class NullSeletor(BaseEstimator, SelectorMixin):
 
         return np.array([self.choose_func(self.actual_dict[k], self.null_dict[k]) \
                          for k in self.features])
+
+
+    def transform(self, dataset):
+        """
+        Instead of from sklearn.feature_selection.base import SelectorMixin.
+        SelectorMixin is now part of the private API.
+
+        Reduce dataset to the selected features.
+
+        Parameters
+        ----------
+        dataset : array of shape [n_samples, n_features]
+            The input samples.
+
+        Returns
+        -------
+        dataset_r : array of shape [n_samples, n_selected_features]
+            The input samples with only the selected features.
+        """
+
+        dataset = check_array(dataset, dtype=None, accept_sparse='csr',
+                              force_all_finite=True)
+        mask = self.get_support()
+        if not mask.any():
+            warn("No features were selected: either the data is"
+                 " too noisy or the selection test too strict.",
+                 UserWarning)
+            return np.empty(0).reshape((dataset.shape[0], 0))
+        if len(mask) != dataset.shape[1]:
+            raise ValueError("dataset has a different shape than during fitting.")
+        return dataset[:, safe_mask(dataset, mask)]
+
+
+    def get_support(self, indices=False):
+        """
+        Instead of from sklearn.feature_selection.base import SelectorMixin.
+        SelectorMixin is now part of the private API.
+
+        Get a mask, or integer index, of the features selected
+
+        Parameters
+        ----------
+        indices : boolean (default False)
+            If True, the return value will be an array of integers, rather
+            than a boolean mask.
+
+        Returns
+        -------
+        support : array
+            An index that selects the retained features from a feature vector.
+            If `indices` is False, this is a boolean array of shape
+            [# input features], in which an element is True iff its
+            corresponding feature is selected for retention. If `indices` is
+            True, this is an integer array of shape [# output features] whose
+            values are indices into the input feature vector.
+        """
+        mask = self._get_support_mask()
+        return mask if not indices else np.where(mask)[0]
