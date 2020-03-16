@@ -65,6 +65,16 @@ class NullSeletor(BaseEstimator):
                          for k in self.features])
 
 
+    def get_selected_features(self):
+        """ Get selected features """
+        selected_features = []
+        mask = self._get_support_mask()
+        for index, support in enumerate(mask):
+            if support:
+                selected_features.append(self.features[index])
+        return selected_features
+
+
     def transform(self, dataset):
         """
         Instead of from sklearn.feature_selection.base import SelectorMixin.
